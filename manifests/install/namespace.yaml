@@ -3,4 +3,5 @@ kind: Namespace
 metadata:
   labels:
     g8s-injection: enabled
+    pod-security.kubernetes.io/enforce: privileged
   name: g8s

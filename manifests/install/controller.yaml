@@ -60,7 +60,7 @@ spec:
           effect: "NoExecute"
       containers:
         - name: controller
-          image: jrodonnell/g8s-runtime:v0.1.0-alpha
+          image: ghcr.io/daimonaslabs/g8s-runtime:v0.1.0-alpha.1
           args: ["--role", "controller"]
           imagePullPolicy: Always
           securityContext:

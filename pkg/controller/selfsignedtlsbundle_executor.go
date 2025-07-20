@@ -134,9 +134,9 @@ func (c *Controller) selfSignedTLSBundleSyncHandler(ctx context.Context, key str
 
 		historyContent := g8sSelfSignedTLSBundle.Rotate()
 		backendContent := make(map[string]string)
-		backendContent["key.pem"] = historyContent["key.pem-0"]
-		backendContent["cert.pem"] = historyContent["cert.pem-0"]
-		backendContent["cacert.pem"] = historyContent["cacert.pem-0"]
+		backendContent["tls.key"] = historyContent["tls.key-0"]
+		backendContent["tls.crt"] = historyContent["tls.crt-0"]
+		backendContent["ca.crt"] = historyContent["ca.crt-0"]
 
 		backend, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSelfSignedTLSBundle, backendContent, "g8s.io/self-signed-tls-bundle"), metav1.CreateOptions{})
 		if err != nil {
@@ -146,16 +146,16 @@ func (c *Controller) selfSignedTLSBundleSyncHandler(ctx context.Context, key str
 	} else if errors.IsNotFound(berr) { // backend dne but history does, rebuild backend from history
 		logger.V(4).Info("Create backend Secret resources from history")
 		content := make(map[string]string)
-		content["key.pem"] = string(history.Data["key.pem-0"])
-		content["cert.pem"] = string(history.Data["cert.pem-0"])
-		content["cacert.pem"] = string(history.Data["cacert.pem-0"])
+		content["tls.key"] = string(history.Data["tls.key-0"])
+		content["tls.crt"] = string(history.Data["tls.crt-0"])
+		content["ca.crt"] = string(history.Data["ca.crt-0"])
 		backend, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSelfSignedTLSBundle, content, "g8s.io/self-signed-tls-bundle"), metav1.CreateOptions{})
 	} else if errors.IsNotFound(herr) { // backend exists but history dne, rebuild history from backend
 		logger.V(4).Info("Create history Secret resources from backend")
 		content := make(map[string]string)
-		content["key.pem-0"] = string(backend.Data["key.pem"])
-		content["cert.pem-0"] = string(backend.Data["cert.pem"])
-		content["cacert.pem-0"] = string(backend.Data["cacert.pem"])
+		content["tls.key-0"] = string(backend.Data["tls.key"])
+		content["tls.crt-0"] = string(backend.Data["tls.crt"])
+		content["ca.crt-0"] = string(backend.Data["ca.crt"])
 		history, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewHistorySecret(g8sSelfSignedTLSBundle, content), metav1.CreateOptions{})
 	} else {
 		logger.V(4).Info("Secret resources for history and backend exist")

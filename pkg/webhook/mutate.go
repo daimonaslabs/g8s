@@ -313,7 +313,7 @@ func (requestPod *podToPatch) genPatch(targets map[string][]string) (patch []pat
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: sn,
 							},
-							Key: "key.pem",
+							Key: "tls.key",
 						},
 					},
 				}, {
@@ -323,7 +323,7 @@ func (requestPod *podToPatch) genPatch(targets map[string][]string) (patch []pat
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: sn,
 							},
-							Key: "cert.pem",
+							Key: "tls.crt",
 						},
 					},
 				}, {
@@ -333,7 +333,7 @@ func (requestPod *podToPatch) genPatch(targets map[string][]string) (patch []pat
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: sn,
 							},
-							Key: "cacert.pem",
+							Key: "ca.crt",
 						},
 					},
 				}}...)

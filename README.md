@@ -58,7 +58,7 @@ are valid.
 
 ## License
 
-Copyright 2024 James Riley O'Donnell.
+Copyright 2025 Daimonas Labs.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

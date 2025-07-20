@@ -1,7 +1,10 @@
+
 # Build the manager binary
-FROM golang:1.22.1 as builder
+FROM golang:1.22.1 AS builder
 ARG TARGETOS
 ARG TARGETARCH
+
+LABEL org.opencontainers.image.source=https://github.com/daimonaslabs/g8s
 
 WORKDIR /workspace
 # Copy the Go Modules manifests

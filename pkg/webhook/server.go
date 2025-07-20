@@ -35,7 +35,7 @@ func Serve(ctx context.Context, g8sInformer g8sinformers.AllowlistInformer) erro
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	err := s.ListenAndServeTLS("./cert.pem", "./key.pem")
+	err := s.ListenAndServeTLS("./tls.crt", "./tls.key")
 
 	if err != nil {
 		logger.Error(err, "Error starting webhook server")

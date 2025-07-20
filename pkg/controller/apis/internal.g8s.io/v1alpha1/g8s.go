@@ -283,15 +283,15 @@ func (sstls SelfSignedTLSBundle) Generate() map[string]string {
 	caCertPEM := string(pem.EncodeToMemory(caCertBlock))
 
 	return map[string]string{
-		"key.pem":    keyPEM,
-		"cert.pem":   certPEM,
-		"cacert.pem": caCertPEM,
+		"tls.key": keyPEM,
+		"tls.crt": certPEM,
+		"ca.crt":  caCertPEM,
 	}
 }
 
 func (sstls SelfSignedTLSBundle) Rotate() map[string]string {
 	newSelfSignedTLSBundle := sstls.Generate()
-	newHistory := append([]string{newSelfSignedTLSBundle["key.pem"]}, newSelfSignedTLSBundle["cert.pem"], newSelfSignedTLSBundle["cacert.pem"])
+	newHistory := append([]string{newSelfSignedTLSBundle["tls.key"]}, newSelfSignedTLSBundle["tls.crt"], newSelfSignedTLSBundle["ca.crt"])
 	newHistory = append(newHistory, sstls.history...)
 	newData := make(map[string]string)
 
@@ -301,11 +301,11 @@ func (sstls SelfSignedTLSBundle) Rotate() map[string]string {
 		mod := i % 3
 
 		if mod == 0 {
-			hist = "key.pem-" + strconv.Itoa(count)
+			hist = "tls.key-" + strconv.Itoa(count)
 		} else if mod == 1 {
-			hist = "cert.pem-" + strconv.Itoa(count)
+			hist = "tls.crt-" + strconv.Itoa(count)
 		} else if mod == 2 {
-			hist = "cacert.pem-" + strconv.Itoa(count)
+			hist = "ca.crt-" + strconv.Itoa(count)
 			count++
 		}
 		newData[hist] = sstls

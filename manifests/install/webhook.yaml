@@ -33,7 +33,7 @@ spec:
           effect: "NoExecute"
       containers:
         - name: webhook
-          image: jrodonnell/g8s-runtime:v0.1.0-alpha
+          image: ghcr.io/daimonaslabs/g8s-runtime:v0.1.0-alpha.1
           args: ["--role", "webhook"]
           ports:
           - name: https
@@ -52,11 +52,11 @@ spec:
                 - ALL
           volumeMounts:
             - name: tls-bundle
-              mountPath: "/key.pem"
-              subPath: key.pem
+              mountPath: "tls.key"
+              subPath: tls.key
             - name: tls-bundle
-              mountPath: "cert.pem"
-              subPath: cert.pem
+              mountPath: "tls.crt"
+              subPath: tls.crt
       volumes:
         - name: tls-bundle
           secret:
@@ -86,7 +86,7 @@ metadata:
 webhooks:
   - name: g8s-webhook.g8s.svc
     clientConfig:
-      caBundle: REPLACE_THIS
+      caBundle: ""
       service:
         name: g8s-webhook
         namespace: g8s
