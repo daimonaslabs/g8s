@@ -15,7 +15,7 @@ It aims to be useful in the following situations when an app needs a certain val
 - Kubernetes cluster, v1.24 and above
 
 ### Installation
-`curl https://raw.githubusercontent.com/jrodonnell/g8s/main/hack/install.sh | bash`
+`curl https://raw.githubusercontent.com/daimonaslabs/g8s/refs/heads/main/hack/install.sh | bash`
 
 ### And then?
 1. Create some objects in the `g8s` namespace, see the `/manifests/samples` folder for some examples
@@ -25,7 +25,7 @@ It aims to be useful in the following situations when an app needs a certain val
 4. Deploy an app with labels that match your propagation rules into the namespace you created in step 2 and voilà!
 
 ### Uninstallation
-`curl https://raw.githubusercontent.com/jrodonnell/g8s/main/hack/uninstall.sh | bash`
+`curl https://raw.githubusercontent.com/daimonaslabs/g8s/refs/heads/main/hack/uninstall.sh | bash`
 
 ## Description
 ### Secret Creation
