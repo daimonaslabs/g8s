@@ -1,6 +1,6 @@
 module github.com/jrodonnell/g8s
 
-go 1.22.1
+go 1.23.4
 
 require (
 	github.com/charmbracelet/keygen v0.5.0

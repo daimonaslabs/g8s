@@ -51,9 +51,15 @@ func NewG8sObjectMeta(g8s G8s, name string) metav1.ObjectMeta {
 	}
 }
 
-func NewBackendSecret(g8s G8s, content map[string]string, secretType corev1.SecretType) *corev1.Secret {
+func NewBackendSecret(g8s G8s, typeSuffix string, content map[string]string, secretType corev1.SecretType) *corev1.Secret {
+	var name string
 	meta := g8s.GetMeta()
-	name := strings.ToLower(meta.Kind + "-" + meta.Name)
+
+	if typeSuffix != "" {
+		name = strings.ToLower(meta.Kind + "-" + typeSuffix + "-" + meta.Name)
+	} else {
+		name = strings.ToLower(meta.Kind + "-" + meta.Name)
+	}
 	return &corev1.Secret{
 		ObjectMeta: NewG8sObjectMeta(g8s, name),
 		Immutable:  boolPtr(true),
@@ -183,9 +189,10 @@ func (ssh SSHKeyPair) Rotate() map[string]string {
 	for i, ssh := range newHistory {
 		mod := i % 2
 
-		if mod == 0 {
+		switch mod {
+		case 0:
 			hist = "ssh.pub-" + strconv.Itoa(count)
-		} else if mod == 1 {
+		case 1:
 			hist = "ssh.key-" + strconv.Itoa(count)
 			count++
 		}
@@ -263,18 +270,12 @@ func (sstls SelfSignedTLSBundle) Generate() map[string]string {
 	}
 
 	// encode these things to DER strings
-	clientKeyBytes, _ := x509.MarshalECPrivateKey(ecdsaClientKey)
-	clientKeyBlock := &pem.Block{
+	caKeyBytes, _ := x509.MarshalECPrivateKey(ecdsaCAKey)
+	caKeyBlock := &pem.Block{
 		Type:  "EC PRIVATE KEY",
-		Bytes: clientKeyBytes,
+		Bytes: caKeyBytes,
 	}
-	keyPEM := string(pem.EncodeToMemory(clientKeyBlock))
-
-	clientCertBlock := &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: clientCertBytes,
-	}
-	certPEM := string(pem.EncodeToMemory(clientCertBlock))
+	caKeyPEM := string(pem.EncodeToMemory(caKeyBlock))
 
 	caCertBlock := &pem.Block{
 		Type:  "CERTIFICATE",
@@ -282,29 +283,47 @@ func (sstls SelfSignedTLSBundle) Generate() map[string]string {
 	}
 	caCertPEM := string(pem.EncodeToMemory(caCertBlock))
 
+	clientKeyBytes, _ := x509.MarshalECPrivateKey(ecdsaClientKey)
+	clientKeyBlock := &pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: clientKeyBytes,
+	}
+	clientKeyPEM := string(pem.EncodeToMemory(clientKeyBlock))
+
+	clientCertBlock := &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: clientCertBytes,
+	}
+	clientCertPEM := string(pem.EncodeToMemory(clientCertBlock))
+
+	fmt.Println(clientKeyPEM, clientCertPEM, caKeyPEM, caCertPEM)
 	return map[string]string{
-		"tls.key": keyPEM,
-		"tls.crt": certPEM,
+		"tls.key": clientKeyPEM,
+		"tls.crt": clientCertPEM,
+		"ca.key":  caKeyPEM,
 		"ca.crt":  caCertPEM,
 	}
 }
 
 func (sstls SelfSignedTLSBundle) Rotate() map[string]string {
 	newSelfSignedTLSBundle := sstls.Generate()
-	newHistory := append([]string{newSelfSignedTLSBundle["tls.key"]}, newSelfSignedTLSBundle["tls.crt"], newSelfSignedTLSBundle["ca.crt"])
+	newHistory := append([]string{newSelfSignedTLSBundle["tls.key"]}, newSelfSignedTLSBundle["tls.crt"], newSelfSignedTLSBundle["ca.key"], newSelfSignedTLSBundle["ca.crt"])
 	newHistory = append(newHistory, sstls.history...)
 	newData := make(map[string]string)
 
 	count := 0
 	hist := ""
 	for i, sstls := range newHistory {
-		mod := i % 3
+		mod := i % 4
 
-		if mod == 0 {
+		switch mod {
+		case 0:
 			hist = "tls.key-" + strconv.Itoa(count)
-		} else if mod == 1 {
+		case 1:
 			hist = "tls.crt-" + strconv.Itoa(count)
-		} else if mod == 2 {
+		case 2:
+			hist = "ca.key-" + strconv.Itoa(count)
+		case 3:
 			hist = "ca.crt-" + strconv.Itoa(count)
 			count++
 		}

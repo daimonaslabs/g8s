@@ -24,7 +24,7 @@ kubectl apply -f crds.yaml
 kubectl apply -f controller.yaml
 kubectl wait --for=condition=Ready pod -l app=g8s-controller -n g8s
 kubectl wait --for=jsonpath='{.status.ready}'=true selfsignedtlsbundle/g8s-webhook -n g8s --timeout=15s
-CA_CRT=$(kubectl get secret selfsignedtlsbundle-g8s-webhook -n g8s -o yaml | yq -r '.data."ca.crt"')
+CA_CRT=$(kubectl get secret selfsignedtlsbundle-ca-g8s-webhook -n g8s -o yaml | yq -r '.data."tls.crt"')
 sed -i "s/REPLACE_THIS/\"$CA_CRT\"/g" webhook.yaml
 
 kubectl apply -f webhook.yaml

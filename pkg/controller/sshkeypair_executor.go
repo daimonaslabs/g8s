@@ -129,7 +129,7 @@ func (c *Controller) sshKeyPairSyncHandler(ctx context.Context, key string) erro
 		backendContent["ssh.pub"] = historyContent["ssh.pub-0"]
 		backendContent["ssh.key"] = historyContent["ssh.key-0"]
 
-		backend, err = c.Client.kubeClientset.CoreV1().Secrets(sshKeyPair.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSSHKP, backendContent, "g8s.io/ssh-key-pair"), metav1.CreateOptions{})
+		backend, err = c.Client.kubeClientset.CoreV1().Secrets(sshKeyPair.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSSHKP, "", backendContent, "g8s.io/ssh-key-pair"), metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
@@ -139,7 +139,7 @@ func (c *Controller) sshKeyPairSyncHandler(ctx context.Context, key string) erro
 		content := make(map[string]string)
 		content["ssh.pub"] = string(history.Data["ssh.pub-0"])
 		content["ssh.key"] = string(history.Data["ssh.key-0"])
-		backend, err = c.Client.kubeClientset.CoreV1().Secrets(sshKeyPair.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSSHKP, content, "g8s.io/ssh-key-pair"), metav1.CreateOptions{})
+		backend, err = c.Client.kubeClientset.CoreV1().Secrets(sshKeyPair.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSSHKP, "", content, "g8s.io/ssh-key-pair"), metav1.CreateOptions{})
 	} else if errors.IsNotFound(herr) { // backend exists but history dne, rebuild history from backend
 		logger.V(4).Info("Create history Secret resources from backend")
 		content := make(map[string]string)

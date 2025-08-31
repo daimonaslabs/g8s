@@ -109,53 +109,60 @@ func (c *Controller) selfSignedTLSBundleSyncHandler(ctx context.Context, key str
 	// DeepCopy for safety
 	selfSignedTLSBundle := selfSignedTLSBundleFromLister.DeepCopy()
 
-	backendName := "selfsignedtlsbundle-" + selfSignedTLSBundle.ObjectMeta.Name
 	historyName := "selfsignedtlsbundle-" + selfSignedTLSBundle.ObjectMeta.Name + "-history"
+	clientBackendName := "selfsignedtlsbundle-client-" + selfSignedTLSBundle.ObjectMeta.Name
+	caBackendName := "selfsignedtlsbundle-ca-" + selfSignedTLSBundle.ObjectMeta.Name
 
-	// Get the backend Secret, history Secret, and CSR with this namespace/name
-	backendFromLister, berr := c.secretLister.Secrets(selfSignedTLSBundle.Namespace).Get(backendName)
+	// Get the backend Secrets, history Secrets, and CSR with this namespace/name
 	historyFromLister, herr := c.secretLister.Secrets(selfSignedTLSBundle.Namespace).Get(historyName)
-	//_, csrerr := c.certificateSigningRequestLister.Get(selfSignedTLSBundle.Name)
+	clientBackendFromLister, clberr := c.secretLister.Secrets(selfSignedTLSBundle.Namespace).Get(clientBackendName)
+	caBackendFromLister, caberr := c.secretLister.Secrets(selfSignedTLSBundle.Namespace).Get(caBackendName)
 
 	// DeepCopy for safety
-	backend := backendFromLister.DeepCopy()
 	history := historyFromLister.DeepCopy()
+	clientBackend := clientBackendFromLister.DeepCopy()
+	caBackend := caBackendFromLister.DeepCopy()
 
 	g8sSelfSignedTLSBundle := internalv1alpha1.NewSelfSignedTLSBundle(selfSignedTLSBundle)
 
 	// If the backend and history resources don't exist, create them
-	if errors.IsNotFound(berr) && errors.IsNotFound(herr) {
+	if errors.IsNotFound(clberr) && errors.IsNotFound(caberr) && errors.IsNotFound(herr) {
 		logger.V(4).Info("Create backend and history Secret resources and CSR")
-
-		// Create the CSR object needed to create the certificate
-		//if errors.IsNotFound(csrerr) {
-		//	go newCSR(g8sSelfSignedTLSBundle)
-		//}
+		fmt.Println("NO OBJECTS EXIST")
 
 		historyContent := g8sSelfSignedTLSBundle.Rotate()
-		backendContent := make(map[string]string)
-		backendContent["tls.key"] = historyContent["tls.key-0"]
-		backendContent["tls.crt"] = historyContent["tls.crt-0"]
-		backendContent["ca.crt"] = historyContent["ca.crt-0"]
+		clientBackendContent := make(map[string]string)
+		caBackendContent := make(map[string]string)
+		clientBackendContent["tls.key"] = historyContent["tls.key-0"]
+		clientBackendContent["tls.crt"] = historyContent["tls.crt-0"]
+		caBackendContent["tls.key"] = historyContent["ca.key-0"]
+		caBackendContent["tls.crt"] = historyContent["ca.crt-0"]
 
-		backend, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSelfSignedTLSBundle, backendContent, "g8s.io/self-signed-tls-bundle"), metav1.CreateOptions{})
+		clientBackend, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSelfSignedTLSBundle, "client", clientBackendContent, "kubernetes.io/tls"), metav1.CreateOptions{})
+		caBackend, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSelfSignedTLSBundle, "ca", caBackendContent, "kubernetes.io/tls"), metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
 		history, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewHistorySecret(g8sSelfSignedTLSBundle, historyContent), metav1.CreateOptions{})
-	} else if errors.IsNotFound(berr) { // backend dne but history does, rebuild backend from history
+	} else if errors.IsNotFound(clberr) || errors.IsNotFound(caberr) { // backend dne but history does, rebuild backend from history
 		logger.V(4).Info("Create backend Secret resources from history")
-		content := make(map[string]string)
-		content["tls.key"] = string(history.Data["tls.key-0"])
-		content["tls.crt"] = string(history.Data["tls.crt-0"])
-		content["ca.crt"] = string(history.Data["ca.crt-0"])
-		backend, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSelfSignedTLSBundle, content, "g8s.io/self-signed-tls-bundle"), metav1.CreateOptions{})
+		fmt.Println("HISTORY EXISTS")
+		clientContent := make(map[string]string)
+		caContent := make(map[string]string)
+		clientContent["tls.key"] = string(history.Data["tls.key-0"])
+		clientContent["tls.crt"] = string(history.Data["tls.crt-0"])
+		caContent["tls.key"] = string(history.Data["ca.key-0"])
+		caContent["tls.crt"] = string(history.Data["ca.crt-0"])
+		clientBackend, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSelfSignedTLSBundle, "client", clientContent, "kubernetes.io/tls"), metav1.CreateOptions{})
+		caBackend, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sSelfSignedTLSBundle, "ca", caContent, "kubernetes.io/tls"), metav1.CreateOptions{})
 	} else if errors.IsNotFound(herr) { // backend exists but history dne, rebuild history from backend
 		logger.V(4).Info("Create history Secret resources from backend")
+		fmt.Println("BACKENDS EXIST")
 		content := make(map[string]string)
-		content["tls.key-0"] = string(backend.Data["tls.key"])
-		content["tls.crt-0"] = string(backend.Data["tls.crt"])
-		content["ca.crt-0"] = string(backend.Data["ca.crt"])
+		content["tls.key-0"] = string(clientBackend.Data["tls.key"])
+		content["tls.crt-0"] = string(clientBackend.Data["tls.crt"])
+		content["ca.key-0"] = string(caBackend.Data["tls.key"])
+		content["ca.crt-0"] = string(caBackend.Data["tls.crt"])
 		history, err = c.Client.kubeClientset.CoreV1().Secrets(selfSignedTLSBundle.Namespace).Create(ctx, internalv1alpha1.NewHistorySecret(g8sSelfSignedTLSBundle, content), metav1.CreateOptions{})
 	} else {
 		logger.V(4).Info("Secret resources for history and backend exist")
@@ -170,10 +177,15 @@ func (c *Controller) selfSignedTLSBundleSyncHandler(ctx context.Context, key str
 
 	// If the Secret is not controlled by this SelfSignedTLSBundle resource, we should log
 	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(backend, selfSignedTLSBundle) {
-		msg := fmt.Sprintf(MessageResourceExists, backend.Name)
+	if !metav1.IsControlledBy(clientBackend, selfSignedTLSBundle) {
+		msg := fmt.Sprintf(MessageResourceExists, clientBackend.Name)
 		c.recorder.Event(selfSignedTLSBundle, corev1.EventTypeWarning, ErrResourceExists, msg)
 		return fmt.Errorf("%s", msg)
+	} else if !metav1.IsControlledBy(caBackend, selfSignedTLSBundle) {
+		msg := fmt.Sprintf(MessageResourceExists, caBackend.Name)
+		c.recorder.Event(selfSignedTLSBundle, corev1.EventTypeWarning, ErrResourceExists, msg)
+		return fmt.Errorf("%s", msg)
+
 	} else if !metav1.IsControlledBy(history, selfSignedTLSBundle) {
 		msg := fmt.Sprintf(MessageResourceExists, history.Name)
 		c.recorder.Event(selfSignedTLSBundle, corev1.EventTypeWarning, ErrResourceExists, msg)
