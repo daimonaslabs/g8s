@@ -1,6 +1,6 @@
 # Image URL to use all building/pushing image targets
-#IMG ?= ghcr.io/daimonaslabs/g8s-runtime:v0.1.0-alpha.1
-IMG ?= ghcr.io/daimonaslabs/g8s-runtime:dev
+IMG ?= ghcr.io/daimonaslabs/g8s-runtime:v0.1.0-alpha.2
+#IMG ?= ghcr.io/daimonaslabs/g8s-runtime:dev
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
