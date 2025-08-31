@@ -130,7 +130,7 @@ func (c *Controller) loginSyncHandler(ctx context.Context, key string) error {
 		backendContent["username"] = g8sLogin.Spec.Username
 		backendContent["password"] = historyContent["password-0"]
 
-		backend, err = c.Client.kubeClientset.CoreV1().Secrets(login.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sLogin, backendContent, "kubernetes.io/basic-auth"), metav1.CreateOptions{})
+		backend, err = c.Client.kubeClientset.CoreV1().Secrets(login.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sLogin, "", backendContent, "kubernetes.io/basic-auth"), metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (c *Controller) loginSyncHandler(ctx context.Context, key string) error {
 		content := make(map[string]string)
 		content["username"] = login.Spec.Username
 		content["password"] = string(history.Data["password-0"])
-		backend, err = c.Client.kubeClientset.CoreV1().Secrets(login.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sLogin, content, "kubernetes.io/basic-auth"), metav1.CreateOptions{})
+		backend, err = c.Client.kubeClientset.CoreV1().Secrets(login.Namespace).Create(ctx, internalv1alpha1.NewBackendSecret(g8sLogin, "", content, "kubernetes.io/basic-auth"), metav1.CreateOptions{})
 	} else if errors.IsNotFound(herr) { // backend exists but history dne, rebuild history from backend
 		logger.V(4).Info("Create history Secret resources from backend")
 		content := make(map[string]string)
