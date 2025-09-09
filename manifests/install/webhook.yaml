@@ -60,7 +60,7 @@ spec:
       volumes:
         - name: tls-bundle
           secret:
-            secretName: selfsignedtlsbundle-g8s-webhook
+            secretName: selfsignedtlsbundle-client-g8s-webhook
 ---
 apiVersion: v1
 kind: Service
